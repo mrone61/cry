@@ -9,7 +9,7 @@
 <body>
 
     <header class="navbar" style="justify-content: space-between;">
-        <a href="/" class="back-link">Back</a>
+        <a href="/" class="back-link">←</a>
         <div class="menu-wrap">
             <button class="menu-btn" onclick="toggleMenu(event)">⋮</button>
             <div id="menuDropdown" class="dropdown">
@@ -25,24 +25,40 @@
             <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>.</p>
 
             <div class="about-list">
-                <h3>1. Enkripsi - Plaintext menjadi Ciphertext</h3>
-                <p>Pesan atau file yang dimasukkan dienkripsi menggunakan AES-128 CBC (via Fernet) menjadi kode acak, kemudian ditandatangani dengan HMAC-SHA256 agar tidak dapat diubah.</p>
+                <h3>1. Kunci Super - Password + Kunci Server</h3>
+                <p>Password yang kamu ketik tidak langsung dipakai. Password digabung dengan <b>Kunci Rahasia Server</b>, lalu diolah menggunakan <b>PBKDF2-HMAC-SHA256 sebanyak 600.000x</b> untuk menghasilkan kunci enkripsi. Jadi meskipun ada yang tahu password kamu, tanpa Kunci Server dia tetap tidak bisa membuka.</p>
 
-                <h3>2. Dekripsi - Verifikasi sebelum dibuka</h3>
-                <p>Sistem memverifikasi HMAC terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter yang diubah, sistem akan menolak.</p>
+                <h3>2. Enkripsi Teks - Fernet (AES-128 CBC + HMAC)</h3>
+                <p>Pesan teks dienkripsi menggunakan Fernet menjadi kode acak, kemudian ditandatangani dengan HMAC-SHA256 agar tidak dapat diubah. Setiap pesan memakai Salt acak yang baru, jadi pesan yang sama akan menghasilkan token yang selalu berbeda.</p>
 
-                <h3>3. Enkripsi File - Gambar, Audio & Video</h3>
-                <p>Selain teks, sistem juga bisa mengenkripsi gambar, musik, dan video. File dibaca sebagai bytes, lalu dienkripsi menjadi token teks. Saat didekripsi, file akan kembali utuh dan bisa langsung ditampilkan atau di-download. Maksimal ukuran file 20MB.</p>
+                <h3>3. Enkripsi File - AES-CTR + HMAC Streaming</h3>
+                <p>Untuk file (Gambar, Audio, Video, PDF, CSV), sistem memakai <b>AES-CTR + HMAC-SHA256 mode Streaming</b>. File dibaca per 64 KB, dienkripsi per potong, tidak pernah diload 20 MB sekaligus ke RAM. Saat didekripsi, file tidak lagi ditampilkan di web, tapi langsung <b>di-download</b> dengan nama asli agar browser tidak berat. Maksimal ukuran file 20MB.</p>
 
-                <h3>4. Keamanan</h3>
-                <p>AES-128 merupakan standar enkripsi yang digunakan di perbankan. Kunci disimpan aman di Environment Variable server dan tidak tertulis di kode program. Input dibatasi untuk mencegah penyalahgunaan.</p>
+                <h3>4. Dekripsi - Verifikasi Sebelum Dibuka</h3>
+                <p>Sistem memverifikasi HMAC terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter saja yang diubah pada token, sistem akan menolak dan menganggap token rusak / password salah.</p>
 
-                <br>
+                <h3>5. Token Hangus 1x Pakai - Burn After Reading</h3>
+                <p>Setiap token hanya bisa dibuka <b>1x saja</b>. Begitu berhasil dibuka, sidik jari token (SHA-256) langsung dimasukkan ke daftar hitam dan dimusnahkan. Jika token yang sama dicoba dibuka lagi, sistem akan menolak dengan pesan "Token ini SUDAH HANGUS".</p>
+
+                <h3>6. Anti Brute Force - Hukuman Bertingkat</h3>
+                <p>Sistem menghitung percobaan gagal per IP + per Token. Jika salah password 3x, token langsung terkunci. Hukumannya bertingkat dan makin lama:</p>
+                <p style="margin-top:8px; font-size:13px; line-height:1.8;">
+                - Gagal 3x = Terkunci <b>1 Menit</b><br>
+                - Gagal 6x = Terkunci <b>1 Jam</b><br>
+                - Gagal 9x = Terkunci <b>1 Hari</b><br>
+                - Gagal 12x = Terkunci <b>7 Hari</b><br>
+                - Gagal 15x = Terkunci <b>30 Hari</b>
+                </p>
+
+                <h3>7. Keamanan Server</h3>
+                <p>AES-128 merupakan standar enkripsi yang digunakan di perbankan. Input file dibatasi maksimal 20 MB untuk mencegah penyalahgunaan server.</p>
+
+                <h3>8. Contact</h3>
                 <p>Ada pertanyaan, saran, atau mau lapor bug? Langsung hubungi saya melalui menu Contact.</p>
                 
             </div>
         </div>
-        <div class="footer">Powered by MR ONE</div>
+        <div class="footer">Powered by MR ONE </div>
     </div>
 
     <script>
@@ -57,4 +73,4 @@
         }
     </script>
 </body>
-</html>
+                                                                     </html>
