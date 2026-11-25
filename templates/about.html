@@ -3,94 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoSecure Vault</title>
+    <title>About</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <header class="navbar">
-        <div class="menu-wrap">
-            <button class="menu-btn" onclick="toggleMenu(event)">⋮</button>
-            <div id="menuDropdown" class="dropdown">
-                <a href="/about">ℹ️ &nbsp; About</a>
-            </div>
-        </div>
+    <header class="navbar" style="justify-content: flex-start;">
+        <a href="/" class="back-link">←</a>
     </header>
 
     <div class="container">
-        <div class="card">
-            <h1>CryptoSecure VaulSt</h1>
-            <p class="subjudul">Brankas digital untuk mengamankan <b>pesan, gambar, audio, dan video</b> berbasis kriptografi simetris menggunakan Teknologi <b>AES-128 + HMAC-SHA256 + PBKDF2</b>.</p>
+        <div class="card" style="text-align:left;">
+            <h1 style="text-align:left;">Cara Kerja Sistem</h1>
+            <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>.</p>
 
-            <form method="POST" enctype="multipart/form-data">
-                <label for="pesan">Masukkan Pesan</label>
-                <textarea name="pesan" id="pesan" placeholder="Contoh: selamat malam">{{ pesan or '' }}</textarea>
+            <div class="about-list">
+                <h3>1. Enkripsi - Plaintext menjadi Ciphertext</h3>
+                <p>Pesan atau file yang dimasukkan dienkripsi menggunakan AES-128 CBC (via Fernet) menjadi kode acak, kemudian ditandatangani dengan HMAC-SHA256 agar tidak dapat diubah.</p>
 
-                <div style="display:flex; align-items:center; gap:10px; margin-top:16px; text-align:left;">
-                    <label for="fileInput" style="cursor:pointer; background:#1a1a1a; border:1px solid #262626; padding:8px 14px; border-radius:99px; font-size:13px; color:#fff; font-weight:600; white-space:nowrap;">+</label>
-                    <input type="file" id="fileInput" name="file" style="display:none;" onchange="document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : ''">
-                    <span id="fileName" style="font-size:12px; color:#9ca3af; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
-                </div>
-                
-                <label for="password" style="margin-top:16px;">Password Vault</label>
-                <input type="password" name="password" id="password" placeholder="masukkan password" required style="width:100%; padding:12px 14px; background:#1a1a1a; border:1px solid #262626; border-radius:12px; color:#fff; font-size:14px; outline:none; box-sizing:border-box;">
-                <p style="font-size:11px; color:#9ca3af; margin:6px 0 0 0; text-align:left;"></p>                
+                <h3>2. Dekripsi - Verifikasi sebelum dibuka</h3>
+                <p>Sistem memverifikasi HMAC terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter yang diubah, sistem akan menolak.</p>
 
-                <div class="button-group">
-                    <button type="submit" name="mode" value="enkripsi" class="btn encrypt">Enkripsi </button>
-                    <button type="submit" name="mode" value="dekripsi" class="btn decrypt">Dekripsi</button>
-                </div>
-            </form>
+                <h3>3. Enkripsi File - Gambar, Audio & Video</h3>
+                <p>Selain teks, sistem juga bisa mengenkripsi gambar, musik, dan video. File dibaca sebagai bytes, lalu dienkripsi menjadi token teks. Saat didekripsi, file akan kembali utuh dan bisa langsung ditampilkan atau di-download. Maksimal ukuran file 20MB.</p>
 
-            {% if hasil %}
-            <div class="hasil">
-                <h2>{% if mode == "enkripsi" %}Hasil Enkripsi - Brankas Terkunci{% else %}Hasil Dekripsi - Brankas Terbuka{% endif %}</h2>
-                <textarea id="hasil" readonly>{{ hasil }}</textarea>
-                <button onclick="salinHasil()" class="copy-btn">Salin Hasil</button>
+                <h3>4. Keamanan</h3>
+                <p>AES-128 merupakan standar enkripsi yang digunakan di perbankan. Kunci disimpan aman di Environment Variable server dan tidak tertulis di kode program. Input dibatasi untuk mencegah penyalahgunaan.</p>
 
-                
-                {% if hasil_file %}
-                <div style="margin-top:16px; text-align:center;">
-                    <p style="font-size:13px; color:#9ca3af;">File: {{ hasil_filename }}</p>
-                    {% if hasil_mimetype.startswith('image/') %}
-                        <img src="{{ hasil_file }}" style="max-width:100%; border-radius:10px; margin-top:10px; border:1px solid #262626;">
-                    {% elif hasil_mimetype.startswith('audio/') %}
-                        <audio controls src="{{ hasil_file }}" style="width:100%; margin-top:10px;"></audio>
-                    {% elif hasil_mimetype.startswith('video/') %}
-                        <video controls src="{{ hasil_file }}" style="max-width:100%; border-radius:10px; margin-top:10px; border:1px solid #262626;"></video>
-                    {% endif %}
-                    <a href="{{ hasil_file }}" download="{{ hasil_filename }}" style="display:block; margin-top:10px; color:#10b981; font-size:13px; font-weight:600;">Download File Asli</a>
-                </div>
-                {% endif %}
             </div>
-            {% endif %}
-
-            {% if error %}
-            <div style="margin-top:16px; background:#3f1d1d; border:1px solid #7f1d1d; color:#fca5a5; padding:12px 14px; border-radius:12px; font-size:13px; text-align:left;">
-                {{ error }}
-            </div>
-            {% endif %}
-
         </div>
         <div class="footer">Powered by MR ONE</div>
     </div>
-
-    <script>
-        function toggleMenu(e){
-            e.stopPropagation();
-            document.getElementById("menuDropdown").classList.toggle("show");
-        }
-        window.onclick = function(e){
-            if(!e.target.matches('.menu-btn')){
-                document.getElementById("menuDropdown").classList.remove("show");
-            }
-        }
-        function salinHasil(){
-            const h=document.getElementById("hasil");
-            h.select();
-            navigator.clipboard.writeText(h.value);
-            alert("Hasil berhasil disalin!");
-        }
-    </script>
 </body>
 </html>
