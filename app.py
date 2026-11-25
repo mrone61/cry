@@ -13,10 +13,6 @@ from cryptography.hazmat.primitives import hashes
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
-# ==========================================================
-# BAGIAN 1: BUKU CATATAN SERVER (MEMORY)
-# ==========================================================
-
 token_sudah_dibuka = set()
 percobaan_gagal = defaultdict(list)
 waktu_blokir_sampai = {}
@@ -57,10 +53,6 @@ def ubah_detik_jadi_kata(detik):
     if detik < 86400:
         return f"{detik // 3600} jam"
     return f"{detik // 86400} hari"
-
-# ==========================================================
-# BAGIAN 2: OTAK ENKRIPSI
-# ==========================================================
 
 def buat_kunci_dari_password(password, salt):
     kdf = PBKDF2HMAC(
@@ -107,10 +99,6 @@ def tebak_mimetype(data_bytes, filename=""):
     if data_bytes.startswith(b'\x1a\x45\xdf\xa3'):
         return 'video/webm'
     return 'application/octet-stream'
-
-# ==========================================================
-# BAGIAN 3: JALUR UTAMA
-# ==========================================================
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -176,7 +164,7 @@ def index():
                     
                     if hasil_bytes.startswith(b"TEXT:"):
                         hasil = hasil_bytes[5:].decode(errors='ignore')
-                        hasil = hasil + "\n\n[TOKEN INI SUDAH HANGUS DAN TIDAK BISA DIBUKA LAGI]"
+                        hasil = hasil + 
                     elif hasil_bytes.startswith(b"FILE:"):
                         try:
                             tanpa_prefix = hasil_bytes[5:]
