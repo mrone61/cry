@@ -169,7 +169,7 @@ def index():
                     
                     if hasil_bytes.startswith(b"TEXT:"):
                         hasil = hasil_bytes[5:].decode(errors='ignore')
-                        hasil = hasil + "\n\n--- TOKEN SUDAH HANGUS! ---"
+                        hasil = hasil
                     elif hasil_bytes.startswith(b"FILE:"):
                         try:
                             tanpa_prefix = hasil_bytes[5:]
