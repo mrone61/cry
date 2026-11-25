@@ -13,6 +13,9 @@ from cryptography.hazmat.primitives import hashes
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
+KUNCI_RAHASIA_SERVER = os.environ.get("KUNCI_RAHASIA_SERVER", "kunci-darurat-hanya-untuk-laptop")
+# ------------------------------------------
+
 token_sudah_dibuka = set()
 percobaan_gagal = defaultdict(list)
 waktu_blokir_sampai = {}
@@ -55,13 +58,15 @@ def ubah_detik_jadi_kata(detik):
     return f"{detik // 86400} hari"
 
 def buat_kunci_dari_password(password, salt):
+    # Password user + Kunci Rahasia Server digabung jadi 1 kunci super
+    password_gabungan = password + KUNCI_RAHASIA_SERVER
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
         iterations=600000,
     )
-    kunci = kdf.derive(password.encode())
+    kunci = kdf.derive(password_gabungan.encode())
     return base64.urlsafe_b64encode(kunci)
 
 def enkrip_dengan_password(data_bytes, password):
@@ -164,7 +169,7 @@ def index():
                     
                     if hasil_bytes.startswith(b"TEXT:"):
                         hasil = hasil_bytes[5:].decode(errors='ignore')
-                        hasil = hasil 
+                        hasil = hasil + "\n\n--- TOKEN SUDAH HANGUS! ---"
                     elif hasil_bytes.startswith(b"FILE:"):
                         try:
                             tanpa_prefix = hasil_bytes[5:]
