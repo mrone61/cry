@@ -22,39 +22,52 @@
     <div class="container">
         <div class="card" style="text-align:left;">
             <h1 style="text-align:left;">Cara Kerja Sistem</h1>
-            <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure Vault menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>. Dilindungi <b>AES-256-GCM & SHA-512</b>, sesuai Standar Post-Quantum NIST.</p>
+            <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure Vault menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>. Dilindungi <b>ML-KEM-768 + Argon2id + AES-256-GCM & SHA-512</b>, sesuai Standar Post-Quantum NIST FIPS 203.</p>
 
             <div class="about-list">
-                <h3>1. Kunci Super - Password + Kunci Server</h3>
-                <p>Password yang kamu ketik tidak langsung dipakai. Password digabung dengan <b>Kunci Rahasia Server</b>, lalu diolah menggunakan <b>PBKDF2-HMAC-SHA512 sebanyak 600.000x</b> untuk menghasilkan kunci enkripsi. Jadi meskipun ada yang tahu password kamu, tanpa Kunci Server dia tetap tidak bisa membuka. Penggunaan SHA-512 membuat kunci tahan terhadap serangan brute-force dan serangan komputer kuantum (Algoritma Grover).</p>
+                <h3>1. ML-KEM-768 Hybrid - Pertukaran Kunci Anti-Kuantum</h3>
+                <p>Sebelum password dikirim, browser dan server melakukan pertukaran kunci menggunakan <b>ML-KEM-768 Hybrid (X25519 + SHA3-512)</b>, sesuai standar <b>NIST FIPS 203</b>. Ini adalah algoritma Post-Quantum resmi yang dirancang untuk tahan terhadap serangan komputer kuantum, termasuk Algoritma Shor yang mampu membobol RSA / ECC. Endpoint <b>/kem-public</b> dan <b>/kem-handshake</b> menangani proses ini.</p>
 
-                <h3>2. Enkripsi Teks - AES-256-GCM (Anti-Kuantum)</h3>
-                <p>Pesan teks dienkripsi menggunakan <b>AES-256-GCM</b>, sesuai Standar Post-Quantum NIST. Versi ini menggunakan kunci 256-bit sehingga meskipun diserang komputer kuantum dengan Algoritma Grover, kekuatannya masih setara AES-128 dan tetap mustahil dibobol. Setiap pesan memakai Salt 32 byte + Nonce acak yang baru, jadi pesan yang sama akan menghasilkan token yang selalu berbeda. Format token baru diawali <b>PQv2.</b></p>
+                <h3>2. Kunci Super - Password + Kunci Server (Wajib dari ENV)</h3>
+                <p>Password yang kamu ketik tidak langsung dipakai. Password digabung dengan <b>Kunci Rahasia Server</b> yang wajib di-set lewat Environment Variables PythonAnywhere. Tidak ada lagi kunci cadangan di dalam kode. Jika kunci server tidak di-set, web sengaja tidak akan berjalan demi keamanan. Jadi meskipun ada yang tahu password kamu, tanpa Kunci Server dia tetap tidak bisa membuka.</p>
 
-                <h3>3. Enkripsi File - AES-256-CTR + HMAC-SHA512 Streaming</h3>
-                <p>Untuk file (Gambar, Audio, Video, PDF, CSV), sistem memakai <b>AES-256-CTR + HMAC-SHA512 mode Streaming</b>. File dibaca per 64 KB, dienkripsi per potong, tidak pernah diload 20 MB sekaligus ke RAM. Saat didekripsi, file tidak lagi ditampilkan di web, tapi langsung <b>di-download</b> dengan nama asli agar browser tidak berat. Maksimal ukuran file 20MB.</p>
+                <h3>3. Argon2id - Pemenang Password Hashing Competition</h3>
+                <p>Kunci enkripsi dibuat menggunakan <b>Argon2id</b> (time=3, memory=64 MB, parallelism=4). Argon2id tidak hanya membuat CPU capek seperti PBKDF2 lama, tapi juga membuat RAM capek, sehingga hacker yang memakai GPU / ASIC untuk brute-force jadi tidak berguna. Ini adalah standar terbaik saat ini untuk mengolah password.</p>
 
-                <h3>4. Dekripsi - Verifikasi Sebelum Dibuka</h3>
-                <p>Sistem memverifikasi HMAC-SHA512 terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter saja yang diubah pada token, sistem akan menolak dan menganggap token rusak / password salah.</p>
+                <h3>4. Enkripsi Teks - AES-256-GCM (Anti-Kuantum)</h3>
+                <p>Pesan teks dienkripsi menggunakan <b>AES-256-GCM</b>, sesuai Standar Post-Quantum NIST. Menggunakan kunci 256-bit sehingga meskipun diserang komputer kuantum dengan Algoritma Grover, kekuatannya masih setara AES-128 dan tetap mustahil dibobol. Setiap pesan memakai Salt 32 byte + Nonce acak yang baru, jadi pesan yang sama akan menghasilkan token yang selalu berbeda. Format token baru diawali <b>PQv3.</b> yang sudah berisi waktu kedaluwarsa.</p>
 
-                <h3>5. Token Hangus 1x Pakai - Burn After Reading</h3>
-                <p>Setiap token hanya bisa dibuka <b>1x saja</b>. Begitu berhasil dibuka, sidik jari token (SHA-256) langsung dimasukkan ke daftar hitam dan dimusnahkan. Jika token yang sama dicoba dibuka lagi, sistem akan menolak dengan pesan "Token ini SUDAH HANGUS".</p>
+                <h3>5. Enkripsi File - AES-256-CTR + HMAC-SHA512 Streaming</h3>
+                <p>Untuk file (Gambar, Audio, Video, PDF, CSV), sistem memakai <b>AES-256-CTR + HMAC-SHA512 mode Streaming</b>. File dibaca per 64 KB, dienkripsi per potong, tidak pernah diload 20 MB sekaligus ke RAM. Saat didekripsi, file langsung <b>di-download</b> dengan nama asli agar browser tidak berat. Maksimal ukuran file 20MB. Format baru diawali <b>FILEv3.</b></p>
 
-                <h3>6. Anti Brute Force - Hukuman Bertingkat</h3>
-                <p>Sistem menghitung percobaan gagal per IP + per Token. Jika salah password 3x, token langsung terkunci. Hukumannya bertingkat dan makin lama:</p>
+                <h3>6. Dekripsi - Verifikasi Sebelum Dibuka</h3>
+                <p>Sistem memverifikasi HMAC-SHA512 / GCM terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter saja yang diubah pada token, sistem akan menolak dan menganggap token rusak / password salah.</p>
+
+                <h3>7. Token Hangus 1x Pakai + Database Permanen - Burn After Reading</h3>
+                <p>Setiap token hanya bisa dibuka <b>1x saja</b>. Begitu berhasil dibuka, sidik jari token (SHA-256) langsung dimasukkan ke database <b>SQLite (vault.db)</b> dan dimusnahkan. Berbeda dengan versi lama yang masih di RAM, sekarang token hangus tetap hangus walau server restart / reload. Jika token yang sama dicoba dibuka lagi, sistem akan menolak dengan pesan "Token ini SUDAH HANGUS".</p>
+
+                <h3>8. Token Kedaluwarsa 24 Jam</h3>
+                <p>Setiap token hanya berlaku <b>24 Jam</b> sejak dibuat. Jika tidak dibuka dalam 24 jam, token otomatis hangus dengan pesan "Token ini SUDAH KEDALUWARSA". Ini seperti fitur disappearing message di WhatsApp / Telegram, agar token lama yang bocor tidak bisa dipakai selamanya.</p>
+
+                <h3>9. Anti Brute Force - Hukuman Bertingkat + Blokir Global</h3>
+                <p>Sistem menghitung percobaan gagal per IP + per Token, dan juga per IP Global. Jika salah password 3x, token langsung terkunci. Hukumannya bertingkat dan makin lama:</p>
                 <p style="margin-top:8px; font-size:13px; line-height:1.8;">
                 - Gagal 3x = Terkunci <b>1 Menit</b><br>
                 - Gagal 6x = Terkunci <b>1 Jam</b><br>
                 - Gagal 9x = Terkunci <b>1 Hari</b><br>
                 - Gagal 12x = Terkunci <b>7 Hari</b><br>
-                - Gagal 15x = Terkunci <b>30 Hari</b>
+                - Gagal 15x = Terkunci <b>30 Hari</b><br>
+                - Gagal 20x dalam 1 Jam di token apapun = <b>Blokir Global IP 1 Jam</b> (VPN / ganti token tidak berguna)
                 </p>
 
-                <h3>7. Keamanan Server & Ketahanan Kuantum</h3>
-                <p>AES-256 merupakan standar enkripsi yang digunakan di perbankan dan instansi pemerintah, dan dinyatakan <b>Quantum-Resistant</b> oleh NIST. Komputer kuantum dengan Algoritma Grover hanya mampu memotong kekuatan kunci menjadi setengah, sehingga AES-256 tetap aman. Sedangkan Algoritma Shor yang mampu membobol RSA / ECC tidak berpengaruh ke sistem ini karena Vault tidak menggunakan RSA sama sekali. Input file dibatasi maksimal 20 MB untuk mencegah penyalahgunaan server.</p>
+                <h3>10. Password Wajib Kuat</h3>
+                <p>Saat enkripsi, password wajib memenuhi syarat: minimal <b>8 karakter</b>, harus ada <b>huruf BESAR (A-Z)</b>, <b>huruf kecil (a-z)</b>, dan <b>angka (0-9)</b>. Contoh password kuat: <b>Rahasia123</b>. Password lemah seperti `123` atau `abc` akan langsung ditolak, karena kunci AES-256 akan sia-sia jika passwordnya mudah ditebak.</p>
 
-                <h3>8. Token Lama Tidak Berlaku</h3>
-                <p>Sejak upgrade ke standar Anti-Kuantum, token lama (Fernet / AES-128 dan HMAC-SHA256) <b>tidak dapat lagi dibuka</b>. Silakan buat token baru dengan format <b>PQv2.</b> untuk teks dan <b>FILEv2.</b> dengan HMAC-SHA512 untuk file.</p>
+                <h3>11. Keamanan Server & Ketahanan Kuantum</h3>
+                <p>AES-256 merupakan standar enkripsi yang digunakan di perbankan dan instansi pemerintah, dan dinyatakan <b>Quantum-Resistant</b> oleh NIST. Komputer kuantum dengan Algoritma Grover hanya mampu memotong kekuatan kunci menjadi setengah, sehingga AES-256 tetap aman. Sedangkan Algoritma Shor yang mampu membobol RSA / ECC tidak berpengaruh ke sistem ini karena Vault tidak menggunakan RSA sama sekali, melainkan ML-KEM-768. Input file dibatasi maksimal 20 MB untuk mencegah penyalahgunaan server.</p>
+
+                <h3>12. Token Lama Tidak Berlaku</h3>
+                <p>Sejak upgrade ke standar Anti-Kuantum, token lama (PQv2 / FILEv2, Fernet / AES-128 dan HMAC-SHA256) <b>tidak dapat lagi dibuka</b>. Silakan buat token baru dengan format <b>PQv3.</b> untuk teks dan <b>FILEv3.</b> untuk file.</p>
 
                 <br>
                 <p>Ada pertanyaan, saran, atau mau lapor bug? Langsung hubungi saya melalui menu Contact.</p>
