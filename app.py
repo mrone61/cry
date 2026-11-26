@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # TETAP 20 MB
 
-KUNCI_RAHASIA_SERVER = os.environ.get("KUNCI_RAHASIA_SERVER", "kunci-darurat-hanya-untuk-laptop")
+#KUNCI_RAHASIA_SERVER = os.environ.get("KUNCI_RAHASIA_SERVER", "kunci-darurat-hanya-untuk-laptop")
 
 token_sudah_dibuka = set()
 percobaan_gagal = defaultdict(list)
