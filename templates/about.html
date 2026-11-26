@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About</title>
+    <title>About - CryptoSecure Vault</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -22,20 +22,20 @@
     <div class="container">
         <div class="card" style="text-align:left;">
             <h1 style="text-align:left;">Cara Kerja Sistem</h1>
-            <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>.</p>
+            <p class="subjudul" style="margin:0; text-align:left;">CryptoSecure Vault menjamin dua aspek utama keamanan: <b>kerahasiaan</b> dan <b>keutuhan data</b>. Dilindungi <b>AES-256-GCM & SHA-512</b>, sesuai Standar Post-Quantum NIST.</p>
 
             <div class="about-list">
                 <h3>1. Kunci Super - Password + Kunci Server</h3>
-                <p>Password yang kamu ketik tidak langsung dipakai. Password digabung dengan <b>Kunci Rahasia Server</b>, lalu diolah menggunakan <b>PBKDF2-HMAC-SHA256 sebanyak 600.000x</b> untuk menghasilkan kunci enkripsi. Jadi meskipun ada yang tahu password kamu, tanpa Kunci Server dia tetap tidak bisa membuka.</p>
+                <p>Password yang kamu ketik tidak langsung dipakai. Password digabung dengan <b>Kunci Rahasia Server</b>, lalu diolah menggunakan <b>PBKDF2-HMAC-SHA512 sebanyak 600.000x</b> untuk menghasilkan kunci enkripsi. Jadi meskipun ada yang tahu password kamu, tanpa Kunci Server dia tetap tidak bisa membuka. Penggunaan SHA-512 membuat kunci tahan terhadap serangan brute-force dan serangan komputer kuantum (Algoritma Grover).</p>
 
-                <h3>2. Enkripsi Teks - Fernet (AES-128 CBC + HMAC)</h3>
-                <p>Pesan teks dienkripsi menggunakan Fernet menjadi kode acak, kemudian ditandatangani dengan HMAC-SHA256 agar tidak dapat diubah. Setiap pesan memakai Salt acak yang baru, jadi pesan yang sama akan menghasilkan token yang selalu berbeda.</p>
+                <h3>2. Enkripsi Teks - AES-256-GCM (Anti-Kuantum)</h3>
+                <p>Pesan teks dienkripsi menggunakan <b>AES-256-GCM</b>, sesuai Standar Post-Quantum NIST. Versi ini menggunakan kunci 256-bit sehingga meskipun diserang komputer kuantum dengan Algoritma Grover, kekuatannya masih setara AES-128 dan tetap mustahil dibobol. Setiap pesan memakai Salt 32 byte + Nonce acak yang baru, jadi pesan yang sama akan menghasilkan token yang selalu berbeda. Format token baru diawali <b>PQv2.</b></p>
 
-                <h3>3. Enkripsi File - AES-CTR + HMAC Streaming</h3>
-                <p>Untuk file (Gambar, Audio, Video, PDF, CSV), sistem memakai <b>AES-CTR + HMAC-SHA256 mode Streaming</b>. File dibaca per 64 KB, dienkripsi per potong, tidak pernah diload 20 MB sekaligus ke RAM. Saat didekripsi, file tidak lagi ditampilkan di web, tapi langsung <b>di-download</b> dengan nama asli agar browser tidak berat. Maksimal ukuran file 20MB.</p>
+                <h3>3. Enkripsi File - AES-256-CTR + HMAC-SHA512 Streaming</h3>
+                <p>Untuk file (Gambar, Audio, Video, PDF, CSV), sistem memakai <b>AES-256-CTR + HMAC-SHA512 mode Streaming</b>. File dibaca per 64 KB, dienkripsi per potong, tidak pernah diload 20 MB sekaligus ke RAM. Saat didekripsi, file tidak lagi ditampilkan di web, tapi langsung <b>di-download</b> dengan nama asli agar browser tidak berat. Maksimal ukuran file 20MB.</p>
 
                 <h3>4. Dekripsi - Verifikasi Sebelum Dibuka</h3>
-                <p>Sistem memverifikasi HMAC terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter saja yang diubah pada token, sistem akan menolak dan menganggap token rusak / password salah.</p>
+                <p>Sistem memverifikasi HMAC-SHA512 terlebih dahulu. Jika valid dan kunci sesuai, pesan atau file dikembalikan ke bentuk asli. Jika ada satu karakter saja yang diubah pada token, sistem akan menolak dan menganggap token rusak / password salah.</p>
 
                 <h3>5. Token Hangus 1x Pakai - Burn After Reading</h3>
                 <p>Setiap token hanya bisa dibuka <b>1x saja</b>. Begitu berhasil dibuka, sidik jari token (SHA-256) langsung dimasukkan ke daftar hitam dan dimusnahkan. Jika token yang sama dicoba dibuka lagi, sistem akan menolak dengan pesan "Token ini SUDAH HANGUS".</p>
@@ -50,8 +50,11 @@
                 - Gagal 15x = Terkunci <b>30 Hari</b>
                 </p>
 
-                <h3>7. Keamanan Server</h3>
-                <p>AES-128 merupakan standar enkripsi yang digunakan di perbankan. Input file dibatasi maksimal 20 MB untuk mencegah penyalahgunaan server.</p>
+                <h3>7. Keamanan Server & Ketahanan Kuantum</h3>
+                <p>AES-256 merupakan standar enkripsi yang digunakan di perbankan dan instansi pemerintah, dan dinyatakan <b>Quantum-Resistant</b> oleh NIST. Komputer kuantum dengan Algoritma Grover hanya mampu memotong kekuatan kunci menjadi setengah, sehingga AES-256 tetap aman. Sedangkan Algoritma Shor yang mampu membobol RSA / ECC tidak berpengaruh ke sistem ini karena Vault tidak menggunakan RSA sama sekali. Input file dibatasi maksimal 20 MB untuk mencegah penyalahgunaan server.</p>
+
+                <h3>8. Token Lama Tidak Berlaku</h3>
+                <p>Sejak upgrade ke standar Anti-Kuantum, token lama (Fernet / AES-128 dan HMAC-SHA256) <b>tidak dapat lagi dibuka</b>. Silakan buat token baru dengan format <b>PQv2.</b> untuk teks dan <b>FILEv2.</b> dengan HMAC-SHA512 untuk file.</p>
 
                 <br>
                 <p>Ada pertanyaan, saran, atau mau lapor bug? Langsung hubungi saya melalui menu Contact.</p>
@@ -73,4 +76,4 @@
         }
     </script>
 </body>
-                                                                     </html>
+</html>
