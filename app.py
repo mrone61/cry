@@ -7,7 +7,6 @@ import time
 import hmac
 from collections import defaultdict
 from flask import Flask, render_template, request, Response
-from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -80,17 +79,6 @@ def buat_kunci_file_dari_password(password, salt):
     kunci_full = kdf.derive(password_gabungan.encode())
     return kunci_full[:32], kunci_full[32:]
 
-def buat_kunci_lama_fernet(password, salt):
-    password_gabungan = password + KUNCI_RAHASIA_SERVER
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=600000,
-    )
-    kunci = kdf.derive(password_gabungan.encode())
-    return base64.urlsafe_b64encode(kunci)
-
 def enkrip_dengan_password(data_bytes, password):
     salt = secrets.token_bytes(32)
     kunci = buat_kunci_dari_password(password, salt)
@@ -100,22 +88,17 @@ def enkrip_dengan_password(data_bytes, password):
     return "PQv2." + base64.urlsafe_b64encode(salt).decode() + "." + base64.urlsafe_b64encode(nonce).decode() + "." + base64.urlsafe_b64encode(ct).decode()
 
 def dekrip_dengan_password(token_gabungan, password):
-    if token_gabungan.strip().startswith("PQv2."):
-        try:
-            _, salt_b64, nonce_b64, ct_b64 = token_gabungan.strip().split(".", 3)
-            salt = base64.urlsafe_b64decode(salt_b64)
-            nonce = base64.urlsafe_b64decode(nonce_b64)
-            ct = base64.urlsafe_b64decode(ct_b64)
-            kunci = buat_kunci_dari_password(password, salt)
-            aesgcm = AESGCM(kunci)
-            return aesgcm.decrypt(nonce, ct, None)
-        except Exception:
-            return None
+    
+    if not token_gabungan.strip().startswith("PQv2."):
+        return None
     try:
-        salt_b64, token = token_gabungan.strip().split(".", 1)
+        _, salt_b64, nonce_b64, ct_b64 = token_gabungan.strip().split(".", 3)
         salt = base64.urlsafe_b64decode(salt_b64)
-        f = Fernet(buat_kunci_lama_fernet(password, salt))
-        return f.decrypt(token.encode())
+        nonce = base64.urlsafe_b64decode(nonce_b64)
+        ct = base64.urlsafe_b64decode(ct_b64)
+        kunci = buat_kunci_dari_password(password, salt)
+        aesgcm = AESGCM(kunci)
+        return aesgcm.decrypt(nonce, ct, None)
     except Exception:
         return None
 
@@ -172,13 +155,11 @@ def cek_token_file_valid(token_gabungan, password):
         tag = base64.urlsafe_b64decode(tag_b64)
 
         _, kunci_mac = buat_kunci_file_dari_password(password, salt)
+    
         mac_hitung = hmac.new(kunci_mac, ciphertext, hashlib.sha512).digest()
-        if hmac.compare_digest(mac_hitung, tag):
-            return True, salt, nonce, ciphertext
-        mac_lama = hmac.new(kunci_mac, ciphertext, hashlib.sha256).digest()
-        if hmac.compare_digest(mac_lama, tag):
-            return True, salt, nonce, ciphertext
-        return False, None, None, None
+        if not hmac.compare_digest(mac_hitung, tag):
+            return False, None, None, None
+        return True, salt, nonce, ciphertext
     except Exception:
         return False, None, None, None
 
@@ -304,17 +285,6 @@ def index():
 
                     if hasil_bytes.startswith(b"TEXT:"):
                         hasil = hasil_bytes[5:].decode(errors='ignore')
-                    elif hasil_bytes.startswith(b"FILE:"):
-                        try:
-                            tanpa_prefix = hasil_bytes[5:]
-                            nama_file_bytes, isi_file = tanpa_prefix.split(b"|", 1)
-                            hasil_filename = nama_file_bytes.decode()
-                            hasil_mimetype = tebak_mimetype(hasil_filename)
-                            b64 = base64.b64encode(isi_file).decode()
-                            hasil_file = f"data:{hasil_mimetype};base64,{b64}"
-                            hasil = f"File berhasil dibuka: {hasil_filename} - TOKEN SUDAH HANGUS!"
-                        except Exception:
-                            error = "Format file rusak!"
                     else:
                         try:
                             hasil = hasil_bytes.decode()
